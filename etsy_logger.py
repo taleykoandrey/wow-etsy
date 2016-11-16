@@ -14,7 +14,7 @@ class Etsy_Logger(logging.Logger):
         handler = RotatingFileHandler(filename,
                                     maxBytes=8192 * 1024,
                                     backupCount=100,
-                                    encoding='utf-8')
+                                    encoding='cp1251')
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)

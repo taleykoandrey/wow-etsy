@@ -3,7 +3,7 @@ import configparser
 import lxml.html
 
 from etsy_logger import elogger as et
-
+from user import get_user_id_or_login_name
 
 config_parser = configparser.ConfigParser()
 config_parser.read('etsy.conf')
@@ -31,16 +31,24 @@ def get_users_from_xml(root):
     parse xml node and extract users.
 
     :param root: node of xml
-    :return: set of users
+    :return: set of users id.
     """
-    xml_users = set()
+    xml_users_id = set()
+    # often user left more than 1 feedback, so it's useful to save user names
+    # to reduce number of requests.
+    xml_users_name = set()
+
     tree = lxml.html.fromstring(root)
 
     for elem in tree.find_class('circle float-right'):
-        user = elem.get('alt')  # get string of users
-        xml_users.add(user)
+        user_name = elem.get('alt')  # get name of user
+        if user_name not in xml_users_name:
+            xml_users_name.add(user_name)
+            user_id = get_user_id_or_login_name(user_name)  # get id by name.
+            if user_id:  # valid user name.
+                xml_users_id.add(user_id)
 
-    return xml_users
+    return xml_users_id
 
 
 def get_users_left_feedback_to_shop(shop_id):
@@ -66,8 +74,6 @@ def get_users_left_feedback_to_shop(shop_id):
             break
 
     et.info(msg='FINISH  get_users_left_feedback_to_shop: ' + shop_id)
-
-    # return set(users)
 
 
 def write_to_file(data):

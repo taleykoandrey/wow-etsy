@@ -5,40 +5,40 @@ from etsy_logger import elogger as et
 from etsy_auth import etsy_auth
 
 
-def get_user_id_by_login_name(user_id):
+def get_user_id_or_login_name(user_id):
     """
     Retrieves a User by id.
     /users/:user_id
-    :param user_id: login_name (only!) of user.
-    :return: id of user
+    :param user_id: login_name or id of user.
+    :return: id of user, if login_name was passed,
+             login_name, if id.
     """
-
+    et.info("START get_user_id_or_login_name")
     url_suffix = ''.join(('/users/', user_id))
     url = etsy_auth.url + url_suffix
 
-    et.info(msg='send request to ' + url)
+    # et.info(msg='send request to ' + url)
     r = requests.get(url, auth=etsy_auth.oauth)
+
+    if r.status_code > 400:
+        et.warning(r.content)
+        et.info("FINISH get_user_id_or_login_name")
+        return False
+
     data = json.loads(r.content.decode('utf-8'))
+
+    login_name = False
+    try:
+        int(user_id)
+    except ValueError:
+        login_name = True
+
+    et.info("FINISH get_user_id_or_login_name")
     # only 1 result in list of results.
-    return data['results'][0]['user_id']
-
-
-def get_user_login_name_by_user_id(user_id):
-    """
-    Retrieves a User by id.
-    /users/:user_id
-    :param user_id: id (only!) of user.
-    :return: login_name of user
-    """
-
-    url_suffix = ''.join(('/users/', user_id))
-    url = etsy_auth.url + url_suffix
-
-    et.info(msg='send request to ' + url)
-    r = requests.get(url, auth=etsy_auth.oauth)
-    data = json.loads(r.content.decode('utf-8'))
-    # only 1 result in list of results.
-    return data['results'][0]['login_name']
+    if login_name:
+        return data['results'][0]['user_id']
+    else:
+        return data['results'][0]['login_name']
 
 
 def get_circles_containing_user(user_id):
@@ -185,7 +185,7 @@ def create_circle_users_of_user(user_id):
 
 def main():
 
-    print(get_user_login_name_by_user_id('88483150'))
+    print(get_user_id_or_login_name('88483150'))
 
 
 if __name__ == '__main__':
