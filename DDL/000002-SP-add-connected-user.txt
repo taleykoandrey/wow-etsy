@@ -2,7 +2,7 @@
 add new connected user.
 
 :param: in_user_id: user for whom to_user_id would be connected,
-:param: to_user_id: user who should be connected to user_id.
+:param: to_user_id: user who would be connected to user_id.
 :return: void.
 */
 
