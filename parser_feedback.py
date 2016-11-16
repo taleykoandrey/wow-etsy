@@ -33,12 +33,14 @@ def get_users_from_xml(root):
     :param root: node of xml
     :return: set of users
     """
-    xml_users = []
+    xml_users = set()
     tree = lxml.html.fromstring(root)
+
     for elem in tree.find_class('circle float-right'):
         user = elem.get('alt')  # get string of users
-        xml_users.append(user)
-    return set(xml_users)
+        xml_users.add(user)
+
+    return xml_users
 
 
 def get_users_left_feedback_to_shop(shop_id):

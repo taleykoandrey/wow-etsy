@@ -5,13 +5,49 @@ from etsy_logger import elogger as et
 from etsy_auth import etsy_auth
 
 
+def get_user_id_by_login_name(user_id):
+    """
+    Retrieves a User by id.
+    /users/:user_id
+    :param user_id: login_name (only!) of user.
+    :return: id of user
+    """
+
+    url_suffix = ''.join(('/users/', user_id))
+    url = etsy_auth.url + url_suffix
+
+    et.info(msg='send request to ' + url)
+    r = requests.get(url, auth=etsy_auth.oauth)
+    data = json.loads(r.content.decode('utf-8'))
+    # only 1 result in list of results.
+    return data['results'][0]['user_id']
+
+
+def get_user_login_name_by_user_id(user_id):
+    """
+    Retrieves a User by id.
+    /users/:user_id
+    :param user_id: id (only!) of user.
+    :return: login_name of user
+    """
+
+    url_suffix = ''.join(('/users/', user_id))
+    url = etsy_auth.url + url_suffix
+
+    et.info(msg='send request to ' + url)
+    r = requests.get(url, auth=etsy_auth.oauth)
+    data = json.loads(r.content.decode('utf-8'))
+    # only 1 result in list of results.
+    return data['results'][0]['login_name']
+
+
 def get_circles_containing_user(user_id):
     """
     /users/:user_id/connected_users
-    Returns a list of users who have circled this user.
-    :return: list.
+    Returns a set of users who have circled this user.
+    :return: set.
     """
-    circled_users = []
+    circled_users = set()
 
     url_suffix = ''.join(('/users/', user_id, '/circles'))
     url = etsy_auth.url + url_suffix
@@ -29,7 +65,7 @@ def get_circles_containing_user(user_id):
                 user_id = res['user_id']
             except KeyError:  # hidden user.
                 pass
-            circled_users.append(user_id)
+            circled_users.add(user_id)
         if data['pagination']['next_offset'] is None:  # last page of listings.
             break
         offset += int(payload['limit'])
@@ -40,12 +76,13 @@ def get_circles_containing_user(user_id):
 def get_connected_users(user_id):
     """
     /users/:user_id/connected_users
-    Returns a list of users that are in this user's cricle.
-    :return: set of connected users.
+
+    :return: set of connected users_id.
     """
     et.info(msg='START get_connected_users: ')
 
-    connected_users = []
+    connected_users = set()
+    connected_user_id = set()
 
     url_suffix = ''.join(('/users/', user_id, '/connected_users'))
     url = etsy_auth.url + url_suffix
@@ -63,25 +100,28 @@ def get_connected_users(user_id):
                 connected_user_id = res['user_id']
             except KeyError:  # hidden user.
                 pass
-            connected_users.append(connected_user_id)
+            connected_users.add(connected_user_id)
         if data['pagination']['next_offset'] is None:  # last page of listings.
             break
         offset += int(payload['limit'])
 
     et.info(msg='FINISH get_connected_users: ')
 
-    return set(connected_users)
+    return connected_users
 
 
 def get_connected_users_name(user_id):
     """
+    retrieve names of connected users.
     /users/:user_id/connected_users
-    Returns a list of users that are in this user's cricle.
+
+    :param: user_id: id of user for whom connected users're retrieved.
     :return: set of connected users.
     """
     et.info(msg='START get_connected_users: ')
 
-    connected_users = []
+    connected_users = set()
+    connected_user_name = set()
 
     url_suffix = ''.join(('/users/', user_id, '/connected_users'))
     url = etsy_auth.url + url_suffix
@@ -96,17 +136,17 @@ def get_connected_users_name(user_id):
         data = json.loads(r.content.decode('utf-8'))
         for res in data['results']:
             try:
-                connected_user_id = res['login_name']
+                connected_user_name = res['login_name']
             except KeyError:  # hidden user.
                 pass
-            connected_users.append(connected_user_id)
+            connected_users.add(connected_user_name)
         if data['pagination']['next_offset'] is None:  # last page of listings.
             break
         offset += int(payload['limit'])
 
     et.info(msg='FINISH get_connected_users: ')
 
-    return set(connected_users)
+    return connected_users
 
 
 def connect_user(user_id, to_user_id):
@@ -141,3 +181,12 @@ def create_circle_users_of_user(user_id):
     for to_user_id in circled_users:
         print(to_user_id)
         connect_user(etsy_auth.user, to_user_id)
+
+
+def main():
+
+    print(get_user_login_name_by_user_id('88483150'))
+
+
+if __name__ == '__main__':
+    main()

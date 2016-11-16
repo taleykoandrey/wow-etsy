@@ -3,7 +3,7 @@ import traceback
 
 from etsy_logger import elogger as et
 
-from user import (connect_user, get_connected_users_name,
+from user import (connect_user, get_connected_users,
                   get_connected_users_name)
 from listing import find_all_shop_listings_active
 from favorite_listing import find_all_listing_favored_by
