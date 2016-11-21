@@ -19,7 +19,7 @@ def gen_pages_for_shop(shop_id):
     :param shop_id: name of shop
     :yield: urls.
     """
-    for i in range(1, 10):
+    for i in range(20, 100):
         uri = ''.join((url_shop, shop_id,
                        '/reviews?ref=pagination&page=', str(i)))
         print(uri)
@@ -76,18 +76,9 @@ def get_users_left_feedback_to_shop(shop_id):
     et.info(msg='FINISH  get_users_left_feedback_to_shop: ' + shop_id)
 
 
-def write_to_file(data):
-    """
-    write info (about users to file).
-    :param data: this is what should be written.
-    """
-    with open(users_feedback_list, 'w', encoding='utf-8') as f:
-        f.write(str(len(data)) + str(data))
-
-
 def main():
     users = get_users_left_feedback_to_shop('OrgonitePyramid')
-    write_to_file(users)
+
 
 
 if __name__ == '__main__':
