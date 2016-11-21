@@ -132,12 +132,12 @@ def write_connected_users_to_db(user_name):
     sql = "SELECT add_connected_user(%s, %s)"
     for to_user_id in to_users_id:
         try:
-            print(to_user_id)
             cur.execute(sql, (user_id, to_user_id))
             cnn.commit()
+            et.info("(user id: {0}, to_user_id: {1}) add".format(user_id, to_user_id))
         except psycopg2.IntegrityError:
-            print("({0},{1}) already exists".format(user_id, to_user_id))
             cnn.rollback()
+            et.info("({0},{1}) already exists".format(user_id, to_user_id))
             continue
 
 
@@ -155,13 +155,14 @@ def write_circled_users_to_db(user_name):
     to_users = get_circles_containing_user(user_id)
 
     sql = "SELECT add_connected_user(%s, %s)"
-    for to_user in to_users:
+    for to_user_id in to_users:
         try:
-            cur.execute(sql, (to_user, user_id))  # reverse order of args!
+            cur.execute(sql, (to_user_id, user_id))  # reverse order of args!
             cnn.commit()
+            et.info("(user id: {0}, to_user_id: {1}) add".format(user_id, to_user_id))
         except psycopg2.IntegrityError:
-            print("({0},{1}) already exists".format(to_user, user_id))
             cnn.rollback()
+            et.info("({0},{1}) already exists".format(user_id, to_user_id))
             continue
 
 
