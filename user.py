@@ -122,19 +122,21 @@ def write_connected_users_to_db(user_name):
     :param user_name: user, whose connected user should be written to db.
     """
     cur = cnn.cursor()
+
+    # get id of user_name by login name.
     user_id = get_user_id_or_login_name(user_name)
 
+    # retrieve set of users, whom user_name connected.
     to_users_id = get_connected_users(user_id)
-    print (to_users_id)
-    sql = "SELECT add_connected_user(%s, %s)"
 
+    sql = "SELECT add_connected_user(%s, %s)"
     for to_user_id in to_users_id:
         try:
             print(to_user_id)
             cur.execute(sql, (user_id, to_user_id))
             cnn.commit()
         except psycopg2.IntegrityError:
-            print ("({0},{1}) already exists".format(user_id, to_user_id))
+            print("({0},{1}) already exists".format(user_id, to_user_id))
             cnn.rollback()
             continue
 
@@ -145,18 +147,20 @@ def write_circled_users_to_db(user_name):
     :param user_name: user, for whom users connected him should be written to db.
     """
     cur = cnn.cursor()
+
+    # get id of user_name by login name.
     user_id = get_user_id_or_login_name(user_name)
 
+    # retrieve set of users, who connected user_name.
     to_users = get_circles_containing_user(user_id)
-    print (to_users)
-    sql = "SELECT add_connected_user(%s, %s)"
 
+    sql = "SELECT add_connected_user(%s, %s)"
     for to_user in to_users:
         try:
             cur.execute(sql, (to_user, user_id))  # reverse order of args!
             cnn.commit()
         except psycopg2.IntegrityError:
-            print ("({0},{1}) already exists".format(to_user, user_id))
+            print("({0},{1}) already exists".format(to_user, user_id))
             cnn.rollback()
             continue
 
@@ -231,13 +235,12 @@ def create_circle_users_of_user(user_id):
     circled_users = get_circles_containing_user(user_id)
 
     for to_user_id in circled_users:
-        print(to_user_id)
         connect_user(etsy_auth.user, to_user_id)
 
 
 def main():
-    # write_connected_users_to_db('Lylyspecial')
-    write_circled_users_to_db('Lylyspecial')
+    write_connected_users_to_db('Lylyspecial')
+    # write_circled_users_to_db('Lylyspecial')
     # print(get_user_id_or_login_name('88483150'))
 
 
