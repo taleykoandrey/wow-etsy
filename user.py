@@ -121,6 +121,8 @@ def write_connected_users_to_db(user_name):
     retrieve connected user set of user_name and write all pairs to db.
     :param user_name: user, whose connected user should be written to db.
     """
+    et.info("START write_connected_users_to_db")
+
     cur = cnn.cursor()
 
     # get id of user_name by login name.
@@ -134,11 +136,13 @@ def write_connected_users_to_db(user_name):
         try:
             cur.execute(sql, (user_id, to_user_id))
             cnn.commit()
-            et.info("(user id: {0}, to_user_id: {1}) add".format(user_id, to_user_id))
+            et.info("pair of user ({0} - {1}) add".format(user_id, to_user_id))
         except psycopg2.IntegrityError:
             cnn.rollback()
-            et.info("({0},{1}) already exists".format(user_id, to_user_id))
+            et.info("pair of user ({0},{1}) already exists".format(user_id, to_user_id))
             continue
+
+    et.info("FINISH write_connected_users_to_db")
 
 
 def write_circled_users_to_db(user_name):
@@ -146,6 +150,8 @@ def write_circled_users_to_db(user_name):
     retrieve users set, who connected user_name, and write all pairs to db.
     :param user_name: user, for whom users connected him should be written to db.
     """
+    et.info("START write_circled_users_to_db")
+
     cur = cnn.cursor()
 
     # get id of user_name by login name.
@@ -159,11 +165,13 @@ def write_circled_users_to_db(user_name):
         try:
             cur.execute(sql, (to_user_id, user_id))  # reverse order of args!
             cnn.commit()
-            et.info("(user id: {0}, to_user_id: {1}) add".format(user_id, to_user_id))
+            et.info("pair of user ({0} - {1}) add".format(user_id, to_user_id))
         except psycopg2.IntegrityError:
             cnn.rollback()
-            et.info("({0},{1}) already exists".format(user_id, to_user_id))
+            et.info("pair of user ({0},{1}) already exists".format(user_id, to_user_id))
             continue
+
+    et.info("FINISH write_circled_users_to_db")
 
 
 def get_connected_users_name(user_id):
