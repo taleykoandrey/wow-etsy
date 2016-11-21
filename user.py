@@ -7,8 +7,6 @@ from etsy_auth import etsy_auth
 from connection import cnn
 
 
-
-
 def get_user_id_or_login_name(user_id):
     """
     Retrieves a User by id.
@@ -49,11 +47,13 @@ def get_circles_containing_user(user_id):
     """
     /users/:user_id/connected_users
     Returns a set of users who have circled this user.
+    usually this number is less than 100.
+    :param user_id: login_name or id of user.
     :return: set.
     """
     circled_users = set()
 
-    url_suffix = ''.join(('/users/', user_id, '/circles'))
+    url_suffix = ''.join(('/users/', str(user_id), '/circles'))
     url = etsy_auth.url + url_suffix
     payload = {'limit': '50', 'offset': ''}
 
@@ -68,7 +68,7 @@ def get_circles_containing_user(user_id):
             try:
                 user_id = res['user_id']
             except KeyError:  # hidden user.
-                pass
+                continue
             circled_users.add(user_id)
         if data['pagination']['next_offset'] is None:  # last page of listings.
             break
@@ -79,8 +79,10 @@ def get_circles_containing_user(user_id):
 
 def get_connected_users(user_id):
     """
+    Retrieve connected users set of user_id.
     /users/:user_id/connected_users
 
+    :param: user_id name or id of user.
     :return: set of connected users_id.
     """
     et.info(msg='START get_connected_users: ')
@@ -117,7 +119,7 @@ def get_connected_users(user_id):
 def write_connected_users_to_db(user_name):
     """
     write pair of connected users to db.
-    :param user_id: user, who connect to_user_id,
+    :param user_name: user, whose connected user should be written to db.
     """
     cur = cnn.cursor()
     user_id = get_user_id_or_login_name(user_name)
@@ -149,7 +151,7 @@ def get_connected_users_name(user_id):
     connected_users = set()
     connected_user_name = set()
 
-    url_suffix = ''.join(('/users/', user_id, '/connected_users'))
+    url_suffix = ''.join(('/users/', str(user_id), '/connected_users'))
     url = etsy_auth.url + url_suffix
     payload = {'limit': '50', 'offset': ''}
 
@@ -179,13 +181,14 @@ def connect_user(user_id, to_user_id):
     """
     /users/:user_id/connected_users
     Adds user (to_user_id) to the user's (user_id) circle.
-    :param: user_id: user who would be favored.
+    :param: user_id: user who connected to_user_id,
+    :param: to_user_id: user, who would be connected to user_id.
     """
     et.info(msg="START connect_user();")
 
-    url_suffix = ''.join(('/users/', user_id, '/connected_users'))
+    url_suffix = ''.join(('/users/', str(user_id), '/connected_users'))
     url = etsy_auth.url + url_suffix
-    payload = {'to_user_id': to_user_id}
+    payload = {'to_user_id': str(to_user_id)}
 
     et.info(msg='send request to ' + url)
 
