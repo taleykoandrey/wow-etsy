@@ -1,8 +1,12 @@
 import requests
 import json
+import traceback
 
 from etsy_logger import elogger as et
 from etsy_auth import etsy_auth
+from connection import cnn
+
+
 
 
 def get_user_id_or_login_name(user_id):
@@ -84,7 +88,7 @@ def get_connected_users(user_id):
     connected_users = set()
     connected_user_id = set()
 
-    url_suffix = ''.join(('/users/', user_id, '/connected_users'))
+    url_suffix = ''.join(('/users/', str(user_id), '/connected_users'))
     url = etsy_auth.url + url_suffix
     payload = {'limit': '50', 'offset': ''}
 
@@ -99,7 +103,7 @@ def get_connected_users(user_id):
             try:
                 connected_user_id = res['user_id']
             except KeyError:  # hidden user.
-                pass
+                continue
             connected_users.add(connected_user_id)
         if data['pagination']['next_offset'] is None:  # last page of listings.
             break
@@ -108,6 +112,28 @@ def get_connected_users(user_id):
     et.info(msg='FINISH get_connected_users: ')
 
     return connected_users
+
+
+def write_connected_users_to_db(user_name):
+    """
+    write pair of connected users to db.
+    :param user_id: user, who connect to_user_id,
+    """
+    cur = cnn.cursor()
+    user_id = get_user_id_or_login_name(user_name)
+
+    to_users = get_connected_users(user_id)
+    print (to_users)
+    sql = "SELECT add_connected_user(%s, %s)"
+
+    for to_user in to_users:
+        try:
+            cur.execute(sql, (user_id, to_user))
+            cnn.commit()
+        except:
+            print (traceback.format_exc())
+            cnn.rollback()
+            continue
 
 
 def get_connected_users_name(user_id):
@@ -184,8 +210,8 @@ def create_circle_users_of_user(user_id):
 
 
 def main():
-
-    print(get_user_id_or_login_name('88483150'))
+    write_connected_users_to_db('Lylyspecial')
+    # print(get_user_id_or_login_name('88483150'))
 
 
 if __name__ == '__main__':
