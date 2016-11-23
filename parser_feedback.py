@@ -68,7 +68,7 @@ def get_users_left_feedback_to_shop(shop_id):
         new_users = get_users_from_xml(data)
         # if new users (not yet appended to result set) exist.
         if len(new_users - users) > 0:
-            #users.update(new_users)  # append new users
+            # users.update(new_users)  # append new users
             yield new_users
         else:  # suppose that in this case no new users exist.
             break
@@ -78,7 +78,6 @@ def get_users_left_feedback_to_shop(shop_id):
 
 def main():
     users = get_users_left_feedback_to_shop('OrgonitePyramid')
-
 
 
 if __name__ == '__main__':

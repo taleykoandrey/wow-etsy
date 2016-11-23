@@ -73,13 +73,13 @@ def connect_all_users_who_left_feedback(user_id, shop_id):
                 connect_user(user_id, str(to_user_id))
             except:
                 et.error(msg=traceback.format_exc())
-            time.sleep(1)
+            time.sleep(0)
     return
 
 
 def main():
-
-    connect_all_users_who_left_feedback('Lylyspecial', 'OrgonitePyramid')
+    et.info("*"*80)
+    connect_all_users_who_left_feedback('Lylyspecial', 'ChakraHealingShop')
 
 
 if __name__ == '__main__':
