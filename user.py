@@ -123,24 +123,14 @@ def write_connected_users_to_db(user_name):
     """
     et.info("START write_connected_users_to_db")
 
-    cur = cnn.cursor()
-
     # get id of user_name by login name.
     user_id = get_user_id_or_login_name(user_name)
 
     # retrieve set of users, whom user_name connected.
     to_users_id = get_connected_users(user_id)
 
-    sql = "SELECT add_connected_user(%s, %s)"
     for to_user_id in to_users_id:
-        try:
-            cur.execute(sql, (user_id, to_user_id))
-            cnn.commit()
-            et.info("pair of user ({0} - {1}) add".format(user_id, to_user_id))
-        except psycopg2.IntegrityError:
-            cnn.rollback()
-            et.info("pair of user ({0},{1}) already exists".format(user_id, to_user_id))
-            continue
+        connect_user_to_db(user_id, to_user_id)
 
     et.info("FINISH write_connected_users_to_db")
 
@@ -150,7 +140,43 @@ def write_circled_users_to_db(user_name):
     retrieve users set, who connected user_name, and write all pairs to db.
     :param user_name: user, for whom users connected him should be written to db.
     """
-    et.info("START write_circled_users_to_db")
+    et.info("START connect_users_to_db")
+
+    # get id of user_name by login name.
+    user_id = get_user_id_or_login_name(user_name)
+
+    # retrieve set of users id, who connected user_name.
+    to_users = get_circles_containing_user(user_id)
+
+    for to_user_id in to_users:
+        connect_user_to_db(to_user_id, user_id)  # reverse order of args!
+
+    et.info("FINISH connect_users_to_db")
+
+
+def connect_user_to_db(user_id, to_user_id):
+    """
+    add pair of connected users into db.
+    :param user_id:
+    :param to_user_id:
+    """
+    sql = "SELECT add_connected_user(%s, %s)"
+    cur = cnn.cursor()
+    try:
+        cur.execute(sql, (user_id, to_user_id))
+        cnn.commit()
+        et.info("pair of user ({0} - {1}) add".format(user_id, to_user_id))
+    except psycopg2.IntegrityError:
+        cnn.rollback()
+        et.info("pair of user ({0},{1}) already exists".format(user_id, to_user_id))
+
+
+def unconnect_users_to_db(user_name):
+    """
+    retrieve users set, who connected user_name, and write all pairs to db.
+    :param user_name: user, for whom users connected him should be written to db.
+    """
+    et.info("START unconnect_users_to_db")
 
     cur = cnn.cursor()
 
@@ -160,7 +186,7 @@ def write_circled_users_to_db(user_name):
     # retrieve set of users, who connected user_name.
     to_users = get_circles_containing_user(user_id)
 
-    sql = "SELECT add_connected_user(%s, %s)"
+    sql = "SELECT unonnect_user(%s, %s)"
     for to_user_id in to_users:
         try:
             cur.execute(sql, (to_user_id, user_id))  # reverse order of args!
@@ -171,7 +197,7 @@ def write_circled_users_to_db(user_name):
             et.info("pair of user ({0},{1}) already exists".format(user_id, to_user_id))
             continue
 
-    et.info("FINISH write_circled_users_to_db")
+    et.info("FINISH unconnect_users_to_db")
 
 
 def get_connected_users_name(user_id):
@@ -234,6 +260,26 @@ def connect_user(user_id, to_user_id):
     et.info(msg="FINISH connect_user();")
 
 
+def unconnect_user(user_id, to_user_id):
+    """
+    /users/:user_id/circles/:to_user_id
+    Removes a user (to_user_id) from the logged in user's (user_id) circle
+    :param: user_id: user for whom to_user_id would be unconnected,
+    :param: to_user_id: user, who would be unconnected from user_id.
+    """
+    et.info(msg="START unconnect_user();")
+
+    url_suffix = ''.join(('/users/', str(user_id), '/circles/', str(to_user_id)))
+    url = etsy_auth.url + url_suffix
+
+    et.info(msg='send request to ' + url)
+
+    r = requests.delete(url, auth=etsy_auth.oauth)
+    # todo: bugs with utf-8
+    et.info(msg=''.join((str(r.status_code), r.content.decode('cp1251'))))
+    et.info(msg="FINISH unconnect_user();")
+
+
 def create_circle_users_of_user(user_id):
     """
     add to circle users who added seller to their circle.
@@ -248,8 +294,9 @@ def create_circle_users_of_user(user_id):
 
 
 def main():
-    write_connected_users_to_db('Lylyspecial')
-    # write_circled_users_to_db('Lylyspecial')
+    # unconnect_user(user_id, to_user_id)
+    # write_connected_users_to_db('Lylyspecial')
+    write_circled_users_to_db('Lylyspecial')
     # print(get_user_id_or_login_name('88483150'))
 
 
