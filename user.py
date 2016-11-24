@@ -1,6 +1,5 @@
 import requests
 import json
-import traceback
 import psycopg2
 
 from etsy_logger import elogger as et
@@ -116,9 +115,9 @@ def get_connected_users(user_id):
     return connected_users
 
 
-def write_connected_users_to_db(user_name):
+def connect_users_db(user_name):
     """
-    retrieve connected user set of user_name and write all pairs to db.
+    connect users.
     :param user_name: user, whose connected user should be written to db.
     """
     et.info("START write_connected_users_to_db")
@@ -130,14 +129,14 @@ def write_connected_users_to_db(user_name):
     to_users_id = get_connected_users(user_id)
 
     for to_user_id in to_users_id:
-        connect_user_to_db(user_id, to_user_id)
+        connect_user_db(user_id, to_user_id)
 
     et.info("FINISH write_connected_users_to_db")
 
 
-def write_circled_users_to_db(user_name):
+def circle_users_db(user_name):
     """
-    retrieve users set, who connected user_name, and write all pairs to db.
+    circle users.
     :param user_name: user, for whom users connected him should be written to db.
     """
     et.info("START connect_users_to_db")
@@ -149,12 +148,12 @@ def write_circled_users_to_db(user_name):
     to_users = get_circles_containing_user(user_id)
 
     for to_user_id in to_users:
-        connect_user_to_db(to_user_id, user_id)  # reverse order of args!
+        connect_user_db(to_user_id, user_id)  # reverse order of args!
 
     et.info("FINISH connect_users_to_db")
 
 
-def connect_user_to_db(user_id, to_user_id):
+def connect_user_db(user_id, to_user_id):
     """
     add pair of connected users into db.
     :param user_id:
@@ -171,33 +170,26 @@ def connect_user_to_db(user_id, to_user_id):
         et.info("pair of user ({0},{1}) already exists".format(user_id, to_user_id))
 
 
-def unconnect_users_to_db(user_name):
+def get_users_to_unconnect_db(user_name):
     """
-    retrieve users set, who connected user_name, and write all pairs to db.
-    :param user_name: user, for whom users connected him should be written to db.
+    get to_users_id who didn't connect user_name.
+    :param user_name: user, for whom users should be unconnected.
     """
-    et.info("START unconnect_users_to_db")
+    et.info("START get_users_to_unconnect_db")
 
     cur = cnn.cursor()
 
     # get id of user_name by login name.
     user_id = get_user_id_or_login_name(user_name)
 
-    # retrieve set of users, who connected user_name.
-    to_users = get_circles_containing_user(user_id)
+    sql = "SELECT get_users_to_unconnect(%s)"
+    try:
+        cur.execute(sql, ( user_id))  # reverse order of args!
+        cnn.commit()
+    except:
+        cnn.rollback()
 
-    sql = "SELECT unonnect_user(%s, %s)"
-    for to_user_id in to_users:
-        try:
-            cur.execute(sql, (to_user_id, user_id))  # reverse order of args!
-            cnn.commit()
-            et.info("pair of user ({0} - {1}) add".format(user_id, to_user_id))
-        except psycopg2.IntegrityError:
-            cnn.rollback()
-            et.info("pair of user ({0},{1}) already exists".format(user_id, to_user_id))
-            continue
-
-    et.info("FINISH unconnect_users_to_db")
+    et.info("FINISH get_users_to_unconnect_db")
 
 
 def get_connected_users_name(user_id):
@@ -255,8 +247,11 @@ def connect_user(user_id, to_user_id):
     et.info(msg='send request to ' + url)
 
     r = requests.post(url, payload, auth=etsy_auth.oauth)
-    # todo: bugs with utf-8
-    et.info(msg=''.join((str(r.status_code), r.content.decode('cp1251'))))
+    # todo: check status.
+    # insert to db.
+    connect_user_db(user_id, to_user_id)
+    # todo: bugs with utf-8 (with user names)
+    et.info(msg=''.join((str(r.status_code), r.content)))
     et.info(msg="FINISH connect_user();")
 
 
@@ -295,8 +290,8 @@ def create_circle_users_of_user(user_id):
 
 def main():
     # unconnect_user(user_id, to_user_id)
-    # write_connected_users_to_db('Lylyspecial')
-    write_circled_users_to_db('Lylyspecial')
+    connect_users_db('Lylyspecial')
+    # circle_users_db('Lylyspecial')
     # print(get_user_id_or_login_name('88483150'))
 
 

@@ -19,7 +19,7 @@ def gen_pages_for_shop(shop_id):
     :param shop_id: name of shop
     :yield: urls.
     """
-    for i in range(20, 100):
+    for i in range(1, 50):
         uri = ''.join((url_shop, shop_id,
                        '/reviews?ref=pagination&page=', str(i)))
         print(uri)

@@ -73,7 +73,7 @@ def connect_all_users_who_left_feedback(user_id, shop_id):
                 connect_user(user_id, str(to_user_id))
             except:
                 et.error(msg=traceback.format_exc())
-            time.sleep(0)
+            time.sleep(10)
     return
 
 
