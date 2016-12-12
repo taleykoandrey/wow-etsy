@@ -19,7 +19,7 @@ def gen_pages_for_shop(shop_id):
     :param shop_id: name of shop
     :yield: urls.
     """
-    for i in range(1, 50):
+    for i in range(30, 76):
         uri = ''.join((url_shop, shop_id,
                        '/reviews?ref=pagination&page=', str(i)))
         print(uri)
@@ -47,16 +47,15 @@ def get_users_from_xml(root):
             user_id = get_user_id_or_login_name(user_name)  # get id by name.
             if user_id:  # valid user name.
                 xml_users_id.add(user_id)
-
     return xml_users_id
 
 
 def get_users_left_feedback_to_shop(shop_id):
     """
-    get users who left feedback to shop.
+    generator function yield users who left feedback to shop.
 
     :param shop_id: name of shop
-    :return: users: set of user
+    :yield: set of users
     """
     et.info(msg='START get_users_left_feedback_to_shop: ' + shop_id)
 

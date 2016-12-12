@@ -1,5 +1,8 @@
 import requests
 import json
+import traceback
+import time
+
 import psycopg2
 
 from etsy_logger import elogger as et
@@ -19,7 +22,7 @@ def get_user_id_or_login_name(user_id):
     url_suffix = ''.join(('/users/', user_id))
     url = etsy_auth.url + url_suffix
 
-    # et.info(msg='send request to ' + url)
+    et.info(msg='send request to ' + url)
     r = requests.get(url, auth=etsy_auth.oauth)
 
     if r.status_code > 400:
@@ -27,7 +30,11 @@ def get_user_id_or_login_name(user_id):
         et.info("FINISH get_user_id_or_login_name")
         return False
 
-    data = json.loads(r.content.decode('utf-8'))
+    try:
+        data = json.loads(r.content.decode('utf-8'))
+    except:
+        et.error(traceback.format_exc())
+        return False
 
     login_name = False
     try:
@@ -36,9 +43,15 @@ def get_user_id_or_login_name(user_id):
         login_name = True
 
     et.info("FINISH get_user_id_or_login_name")
+    time.sleep(0.5)
+
     # only 1 result in list of results.
     if login_name:
-        return data['results'][0]['user_id']
+        try:
+            user_id = data['results'][0]['user_id']
+        except IndexError:
+            user_id = 0  # anonymus
+        return user_id
     else:
         return data['results'][0]['login_name']
 
@@ -170,7 +183,24 @@ def connect_user_db(user_id, to_user_id):
         et.info("pair of user ({0},{1}) already exists".format(user_id, to_user_id))
 
 
-def get_users_to_unconnect_db(user_name):
+def unconnect_user_db(user_id, to_user_id):
+    """
+    add pair of connected users into db.
+    :param user_id:
+    :param to_user_id:
+    """
+    sql = "SELECT set_user_unconnect(%s, %s)"
+    cur = cnn.cursor()
+    try:
+        cur.execute(sql, (user_id, to_user_id))
+        cnn.commit()
+        et.info("pair of user ({0} - {1}) unconnected".format(user_id, to_user_id))
+    except:
+        cnn.rollback()
+        et.error("error during unconnect_user_db\n" + traceback.format_exc())
+
+
+def get_users_to_unconnect_db(user_id):
     """
     get to_users_id who didn't connect user_name.
     :param user_name: user, for whom users should be unconnected.
@@ -178,18 +208,18 @@ def get_users_to_unconnect_db(user_name):
     et.info("START get_users_to_unconnect_db")
 
     cur = cnn.cursor()
-
-    # get id of user_name by login name.
-    user_id = get_user_id_or_login_name(user_name)
+    users = {}
 
     sql = "SELECT get_users_to_unconnect(%s)"
     try:
-        cur.execute(sql, ( user_id))  # reverse order of args!
+        cur.execute(sql, (user_id, ))
+        users = cur.fetchall()
         cnn.commit()
     except:
         cnn.rollback()
 
     et.info("FINISH get_users_to_unconnect_db")
+    return users
 
 
 def get_connected_users_name(user_id):
@@ -247,11 +277,9 @@ def connect_user(user_id, to_user_id):
     et.info(msg='send request to ' + url)
 
     r = requests.post(url, payload, auth=etsy_auth.oauth)
-    # todo: check status.
-    # insert to db.
-    connect_user_db(user_id, to_user_id)
+
     # todo: bugs with utf-8 (with user names)
-    et.info(msg=''.join((str(r.status_code), r.content)))
+    et.info(msg=''.join((str(r.status_code), r.content.decode("utf-8"))))
     et.info(msg="FINISH connect_user();")
 
 
@@ -270,9 +298,51 @@ def unconnect_user(user_id, to_user_id):
     et.info(msg='send request to ' + url)
 
     r = requests.delete(url, auth=etsy_auth.oauth)
+
     # todo: bugs with utf-8
     et.info(msg=''.join((str(r.status_code), r.content.decode('cp1251'))))
     et.info(msg="FINISH unconnect_user();")
+
+
+def unconnect_users_of_user(user_name):
+    """
+    :param: user_id: user for whom to_user_id would be unconnected,
+    """
+    et.info(msg="START unconnect_users();")
+
+    user_id = get_user_id_or_login_name(user_name)
+
+    # retrieve users who should be unconnected.
+    to_users_id = get_users_to_unconnect_db(user_id)
+
+    for to_user_id in to_users_id:
+        unconnect_user(user_id, to_user_id[0])
+        unconnect_user_db(user_id, to_user_id[0])
+
+    et.info(msg="FINISH unconnect_users();")
+
+
+def was_user_connected_to_user(user_id, to_user_id):
+    """
+    check if to_user_id was ever connected to user_id.
+    :param user_id:
+    :param to_user_id:
+    :return boolean.
+    """
+    et.info(msg="START was_user_connected_to_user();")
+    sql = "SELECT was_user_connected_to_user(%s, %s)"
+    cur = cnn.cursor()
+    res = False
+
+    try:
+        cur.execute(sql, (user_id, to_user_id))
+        res = cur.fetchone()[0]
+        cnn.commit()
+    except:
+        cnn.rollback()
+        et.error("error during was_user_connected_to_user\n" + traceback.format_exc())
+    et.info(msg="FINISH was_user_connected_to_user();")
+    return res
 
 
 def create_circle_users_of_user(user_id):
@@ -289,10 +359,7 @@ def create_circle_users_of_user(user_id):
 
 
 def main():
-    # unconnect_user(user_id, to_user_id)
-    connect_users_db('Lylyspecial')
-    # circle_users_db('Lylyspecial')
-    # print(get_user_id_or_login_name('88483150'))
+    unconnect_users_of_user('Lylyspecial')
 
 
 if __name__ == '__main__':

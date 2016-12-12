@@ -4,7 +4,8 @@ import traceback
 from etsy_logger import elogger as et
 
 from user import (connect_user, get_connected_users,
-                  get_connected_users_name)
+                  get_connected_users_name, was_user_connected_to_user,
+                  get_user_id_or_login_name, connect_user_db)
 from listing import find_all_shop_listings_active
 from favorite_listing import find_all_listing_favored_by
 from parser_feedback import get_users_left_feedback_to_shop
@@ -56,30 +57,34 @@ def connect_all_users_who_liked_shop(user_id, shop_id):
     return
 
 
-def connect_all_users_who_left_feedback(user_id, shop_id):
+def connect_all_users_who_left_feedback(user_name, shop_id):
     """
     connect users who left feedback to a shop.
     :param user_id: name of user.
     :param shop_id: name of shop.
     """
-    # create set of users who'e already connected.
-    my_connected_users = get_connected_users_name(user_id)
+
+    user_id = get_user_id_or_login_name(user_name)
 
     for batch_aimed_users in get_users_left_feedback_to_shop(shop_id):
         # only users who're not yet connected.
         # todo: batch_aimed_users presents as names, though my_connected_users as id!
-        for to_user_id in batch_aimed_users - my_connected_users:
-            try:
-                connect_user(user_id, str(to_user_id))
-            except:
-                et.error(msg=traceback.format_exc())
-            time.sleep(10)
+        for to_user_id in batch_aimed_users:
+            print(to_user_id)
+            if was_user_connected_to_user(user_id, to_user_id):
+                print("already")
+                continue
+            else:
+                connect_user(user_id, to_user_id)
+                connect_user_db(user_id, to_user_id)
+                print("new")
+
     return
 
 
 def main():
     et.info("*"*80)
-    connect_all_users_who_left_feedback('Lylyspecial', 'ChakraHealingShop')
+    connect_all_users_who_left_feedback('Lylyspecial', 'AURAMORE')
 
 
 if __name__ == '__main__':
