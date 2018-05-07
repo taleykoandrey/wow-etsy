@@ -26,8 +26,8 @@ def get_user_id_or_login_name(user_id):
     r = requests.get(url, auth=etsy_auth.oauth)
 
     if r.status_code > 400:
-        et.warning(r.content)
-        et.info("FINISH get_user_id_or_login_name")
+        et.error(r.content)
+        et.error("FINISH get_user_id_or_login_name")
         return False
 
     try:
@@ -43,7 +43,7 @@ def get_user_id_or_login_name(user_id):
         login_name = True
 
     et.info("FINISH get_user_id_or_login_name")
-    time.sleep(0.5)
+    time.sleep(0.1)
 
     # only 1 result in list of results.
     if login_name:
@@ -203,7 +203,7 @@ def unconnect_user_db(user_id, to_user_id):
 def get_users_to_unconnect_db(user_id):
     """
     get to_users_id who didn't connect user_name.
-    :param user_name: user, for whom users should be unconnected.
+    :param user_id: user, for whom users should be unconnected.
     """
     et.info("START get_users_to_unconnect_db")
 

@@ -1,14 +1,32 @@
 import time
 import traceback
+from connection import cnn
 
 from etsy_logger import elogger as et
 
 from user import (connect_user, get_connected_users,
-                  get_connected_users_name, was_user_connected_to_user,
+                  was_user_connected_to_user,
                   get_user_id_or_login_name, connect_user_db)
 from listing import find_all_shop_listings_active
 from favorite_listing import find_all_listing_favored_by
 from parser_feedback import get_users_left_feedback_to_shop
+
+
+sellers = ['NewMoonBeginnings']
+
+
+def get_sellers():
+    """
+    :return:
+    """
+    cur = cnn.cursor()
+    try:
+        cur.execute("select seller_name from  sellers order by id;")
+    except:
+        cnn.rollback()
+    res = [item[0] for item in cur.fetchall()]
+    cnn.commit()
+    return res
 
 
 def find_all_users_favored_listing_in_shop(shop_id):
@@ -67,9 +85,11 @@ def connect_all_users_who_left_feedback(user_name, shop_id):
     user_id = get_user_id_or_login_name(user_name)
 
     for batch_aimed_users in get_users_left_feedback_to_shop(shop_id):
+        print (batch_aimed_users)
         # only users who're not yet connected.
         # todo: batch_aimed_users presents as names, though my_connected_users as id!
         for to_user_id in batch_aimed_users:
+            time.sleep(0.2)
             print(to_user_id)
             if was_user_connected_to_user(user_id, to_user_id):
                 print("already")
@@ -79,12 +99,56 @@ def connect_all_users_who_left_feedback(user_name, shop_id):
                 connect_user_db(user_id, to_user_id)
                 print("new")
 
+    #cur=cnn.cursor()
+    #cur.execute("UPDATE Sellers SET processed=CURRENT_DATE WHERE seller_name=" + to_user_id)
     return
+
+
+def add_seller(seller_name):
+    """
+    add seller to seller's table
+    :param seller: name of seller
+    :return:
+    """
+    cur = cnn.cursor()
+    try:
+        sql = "INSERT INTO Sellers(seller_name) VALUES(%s);"
+        cur.execute(sql, (seller_name, ))
+        cnn.commit()
+    except:
+        cnn.rollback()
+        raise
+
+
+def connect_fresh_users(my_name):
+    """
+    connect new buyers of all sellers in database.
+    looking 1 or little more fresh pages with feedbacks
+    :param: my_name: name of selleer for whom connect buyers
+    """
+    for seller in get_sellers():
+        connect_all_users_who_left_feedback(my_name, seller)
+
+
+def connect_all_users(my_name):
+    """
+    connect all buyers of all sellers in list.
+    looking all pages with feedbacks, add this seller into db.
+    :param: my_name: name of selleer for whom connect buyers
+    """
+    for seller in sellers:
+        try:
+            add_seller(seller)
+        except:
+            print ("seller already addded")
+            #return
+        connect_all_users_who_left_feedback(my_name, seller)
 
 
 def main():
     et.info("*"*80)
-    connect_all_users_who_left_feedback('Lylyspecial', 'AURAMORE')
+    #connect_all_users('Lylyspecial')
+    connect_fresh_users('Lylyspecial')
 
 
 if __name__ == '__main__':

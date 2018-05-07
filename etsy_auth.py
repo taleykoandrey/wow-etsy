@@ -12,7 +12,7 @@ def get_key_url():
     url: main url
     """
     config_parser = configparser.ConfigParser()
-    config_parser.read('etsy.conf')
+    config_parser.read('D:/projects/wow-etsy/etsy.conf')
     url = config_parser.get('API', 'URI')
     key = config_parser.get('API', 'KEYSTRING')
     key_secret = config_parser.get('API', 'SHARED-SECRET')

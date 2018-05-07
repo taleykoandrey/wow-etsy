@@ -3,7 +3,7 @@ import psycopg2
 
 config_parser = configparser.ConfigParser()
 
-config_parser.read('etsy.conf')
+config_parser.read('D:/projects/wow-etsy/etsy.conf')
 
 
 dbname = config_parser.get('DB', 'dbname')
@@ -16,7 +16,6 @@ port = config_parser.get('DB', 'port')
 # todo: handle errors.
 cnn = psycopg2.connect(database=dbname,
                        user=user,
-                       password=password,
                        host=host,
                        port=port)
 # shared cursor
