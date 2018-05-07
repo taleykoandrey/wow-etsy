@@ -1,14 +1,14 @@
 import requests
 import configparser
 import lxml.html
-from fake_useragent import UserAgent
+#from fake_useragent import UserAgent
 import time
 
 from etsy_logger import elogger as et
 from user import get_user_id_or_login_name
 
 config_parser = configparser.ConfigParser()
-config_parser.read('D:/projects/wow-etsy/etsy.conf')
+config_parser.read('etsy.conf')
 url_shop = config_parser.get('URL', 'url-shop')
 users_feedback_list = config_parser.get('LOG', 'users-feedback-list')
 
@@ -69,9 +69,9 @@ def get_users_left_feedback_to_shop(shop_id):
 
     for url in gen_pages_for_shop(shop_id):
         et.info(msg='send request to ' + url)
-        ua = UserAgent()
-        header = {'User-Agent': str(ua.chrome)}
-        r = requests.get(url, headers=header)
+        #ua = UserAgent()
+        #header = {'User-Agent': str(ua.chrome)}
+        r = requests.get(url)
         #r2 = urllib.request.urlopen(url)
         print (r.reason)
         #time.sleep(1)

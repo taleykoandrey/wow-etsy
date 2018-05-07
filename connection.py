@@ -3,7 +3,7 @@ import psycopg2
 
 config_parser = configparser.ConfigParser()
 
-config_parser.read('D:/projects/wow-etsy/etsy.conf')
+config_parser.read('etsy.conf')
 
 
 dbname = config_parser.get('DB', 'dbname')
