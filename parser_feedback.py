@@ -23,9 +23,9 @@ def gen_pages_for_shop(shop_id):
     :yield: urls.
     ?ref=pagination&page=, str(i))
     """
-    for i in range(2, 3):
+    for i in range(1, 2):
         uri = ''.join((url_shop, shop_id,
-                       '/reviews?ref=pagination&page=', str(i)))
+                       '/#reviews?ref=pagination&page=', str(i)))
         print(uri)
         yield uri
 
@@ -67,22 +67,30 @@ def get_users_left_feedback_to_shop(shop_id):
     """
     et.info(msg='START get_users_left_feedback_to_shop: ' + shop_id)
 
-    users = set()
+    # users in current shop page
     new_users = set()
+    # users in all searched pages
+    new_users_all = set()
 
     for url in gen_pages_for_shop(shop_id):
         et.info(msg='send request to ' + url)
         r = requests.get(url)
         print (r.reason)
+        # page not found.
+        if r.status_code >=400:
+            return -1
+
         data = r.content.decode('utf-8')
         try:
             new_users = get_users_from_xml(data)
-            yield new_users
+            new_users_all =  new_users | new_users_all
         except:
-            print("get_users_from_xml. can't rettriver data from xml")
+            print("get_users_from_xml. can't retrieve data from xml")
             continue
 
     et.info(msg='FINISH  get_users_left_feedback_to_shop: ' + shop_id)
+    return new_users_all
+
 
 
 def main():

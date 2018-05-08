@@ -84,23 +84,25 @@ def connect_all_users_who_left_feedback(user_name, shop_id):
 
     user_id = get_user_id_or_login_name(user_name)
 
-    for batch_aimed_users in get_users_left_feedback_to_shop(shop_id):
-        print (batch_aimed_users)
-        # only users who're not yet connected.
-        # todo: batch_aimed_users presents as names, though my_connected_users as id!
-        for to_user_id in batch_aimed_users:
-            time.sleep(0.2)
-            print(to_user_id)
-            if was_user_connected_to_user(user_id, to_user_id):
-                print("already")
-                continue
-            else:
-                connect_user(user_id, to_user_id)
-                connect_user_db(user_id, to_user_id)
-                print("new")
+    users = get_users_left_feedback_to_shop(shop_id)
+    if users == -1:
+        print("!!!")
+        return
+    for to_user_id in users:
+        print (to_user_id)
+        if was_user_connected_to_user(user_id, to_user_id):
+            print("already")
+            continue
+        else:
+            connect_user(user_id, to_user_id)
+            connect_user_db(user_id, to_user_id)
+            print("new")
 
-    #cur=cnn.cursor()
-    #cur.execute("UPDATE Sellers SET processed=CURRENT_DATE WHERE seller_name=" + to_user_id)
+    cur=cnn.cursor()
+    cur.execute("UPDATE Sellers "
+                "SET processed = CURRENT_DATE "
+                "WHERE seller_name='" + shop_id + "'")
+    cnn.commit()
     return
 
 
