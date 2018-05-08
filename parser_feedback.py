@@ -2,6 +2,7 @@ import requests
 import configparser
 import lxml.html
 #from fake_useragent import UserAgent
+from string import whitespace
 import time
 
 from etsy_logger import elogger as et
@@ -22,9 +23,9 @@ def gen_pages_for_shop(shop_id):
     :yield: urls.
     ?ref=pagination&page=, str(i))
     """
-    for i in range(1, 2):
+    for i in range(2, 3):
         uri = ''.join((url_shop, shop_id,
-                       '/#reviews?ref=pagination&page=', str(i)))
+                       '/reviews?ref=pagination&page=', str(i)))
         print(uri)
         yield uri
 
@@ -45,10 +46,12 @@ def get_users_from_xml(root):
     tree = lxml.html.fromstring(root)
     for elem in tree.find_class('circle float-right'):
         user_name = elem.get('alt')  # get name of user
+        # remove all kin of whitespaces
+        user_name = user_name.translate(dict.fromkeys(map(ord, whitespace)))
         if user_name not in xml_users_name:
             xml_users_name.add(user_name)
             user_id = get_user_id_or_login_name(user_name)  # get id by name.
-            time.sleep(1)
+            time.sleep(0.5)
             if user_id:  # valid user name.
                 xml_users_id.add(user_id)
 
@@ -69,18 +72,14 @@ def get_users_left_feedback_to_shop(shop_id):
 
     for url in gen_pages_for_shop(shop_id):
         et.info(msg='send request to ' + url)
-        #ua = UserAgent()
-        #header = {'User-Agent': str(ua.chrome)}
         r = requests.get(url)
-        #r2 = urllib.request.urlopen(url)
         print (r.reason)
-        #time.sleep(1)
         data = r.content.decode('utf-8')
         try:
             new_users = get_users_from_xml(data)
             yield new_users
         except:
-            print("ups")
+            print("get_users_from_xml. can't rettriver data from xml")
             continue
 
     et.info(msg='FINISH  get_users_left_feedback_to_shop: ' + shop_id)
