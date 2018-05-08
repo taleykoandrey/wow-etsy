@@ -9,7 +9,6 @@ from etsy_logger import elogger as et
 from etsy_auth import etsy_auth
 from connection import cnn
 
-
 def get_user_id_or_login_name(user_id):
     """
     Retrieves a User by id.
@@ -24,7 +23,9 @@ def get_user_id_or_login_name(user_id):
 
     et.info(msg='send request to ' + url)
     r = requests.get(url, auth=etsy_auth.oauth)
-
+    remain = r.headers['X-RateLimit-Remaining']
+    et.info(msg='X-RATE-REMAINING: ' + remain)
+    print("REMAIN:", remain)
     if r.status_code > 400:
         et.error(r.content)
         et.error("FINISH get_user_id_or_login_name")
